@@ -1,0 +1,40 @@
+################################################################################
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+# These modules are not deployed to maven central, despite their use of the shade plugin.
+
+org.apache.flink-examples-streaming-twitter
+org.apache.flink-examples-streaming-gcp-pubsub
+org.apache.flink-yarn-tests
+org.apache.flink-docs
+org.apache.flink-datastream-allround-test
+org.apache.flink-queryable-state-test
+org.apache.flink-confluent-schema-registry
+org.apache.flink-stream-stateful-job-upgrade-test
+org.apache.flink-elasticsearch7-test
+org.apache.flink-stream-state-ttl-test
+org.apache.flink-state-evolution-test
+org.apache.flink-elasticsearch6-test
+org.apache.flink-rocksdb-state-memory-control-test
+org.apache.flink-python-test
+org.apache.flink-streaming-kinesis-test
+org.apache.flink-tpch-test
+org.apache.flink-streaming-kafka-test-base
+org.apache.flink-heavy-deployment-stress-test
+org.apache.flink-elasticsearch5-test
+org.apache.flink-high-parallelism-iterations-test
