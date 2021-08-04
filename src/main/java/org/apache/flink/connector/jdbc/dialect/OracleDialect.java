@@ -43,7 +43,6 @@ public class OracleDialect extends AbstractDialect {
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
         throw new UnsupportedOperationException();
     }
-
     @Override
     public String quoteIdentifier(String identifier) {
         return identifier;

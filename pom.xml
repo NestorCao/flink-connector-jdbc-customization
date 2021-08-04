@@ -10,7 +10,7 @@
         <version>1.13.0</version>
     </parent>
     <groupId>com.botech.flink</groupId>
-    <artifactId>flink-connector-jdbc-customization</artifactId>
+    <artifactId>flink-connector-jdbc_2.11</artifactId>
     <packaging>jar</packaging>
     <version>1.13.0-SNAPSHOT</version>
 
