@@ -5,15 +5,19 @@ import org.apache.flink.connector.jdbc.internal.converter.OracleRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class OracleDialect extends AbstractDialect {
     private static final long serialVersionUID = 1L;
+    private static final String SQL_DEFAULT_PLACEHOLDER = " :";
     private static final int MAX_TIMESTAMP_PRECISION = 6;
     private static final int MIN_TIMESTAMP_PRECISION = 1;
-    private static final int MAX_DECIMAL_PRECISION = 65;
+    private static final int MAX_DECIMAL_PRECISION = 38;
     private static final int MIN_DECIMAL_PRECISION = 1;
 
     public OracleDialect() {}
@@ -41,11 +45,126 @@ public class OracleDialect extends AbstractDialect {
     @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
-        throw new UnsupportedOperationException();
+        return Optional.of(getUpsertStatement(tableName, fieldNames, uniqueKeyFields, true));
     }
+
+    public String getUpsertStatement(
+            String tableName, String[] fieldNames, String[] uniqueKeyFields, boolean allReplace) {
+        StringBuilder mergeIntoSql = new StringBuilder();
+        mergeIntoSql
+                .append("MERGE INTO " + tableName + " T1 USING (")
+                .append(buildDualQueryStatement(fieldNames))
+                .append(") T2 ON (")
+                .append(buildConnectionConditions(uniqueKeyFields) + ") ");
+
+        String updateSql = buildUpdateConnection(fieldNames, uniqueKeyFields, allReplace);
+
+        if (StringUtils.isNotEmpty(updateSql)) {
+            mergeIntoSql.append(" WHEN MATCHED THEN UPDATE SET ");
+            mergeIntoSql.append(updateSql);
+        }
+
+        mergeIntoSql
+                .append(" WHEN NOT MATCHED THEN ")
+                .append("INSERT (")
+                .append(
+                        Arrays.stream(fieldNames)
+                                .map(col -> quoteIdentifier(col))
+                                .collect(Collectors.joining(",")))
+                .append(") VALUES (")
+                .append(
+                        Arrays.stream(fieldNames)
+                                .map(col -> "T2." + quoteIdentifier(col))
+                                .collect(Collectors.joining(",")))
+                .append(")");
+
+        return mergeIntoSql.toString();
+    }
+
+    private String buildUpdateConnection(
+            String[] fieldNames, String[] uniqueKeyFields, boolean allReplace) {
+        List<String> uniqueKeyList = Arrays.asList(uniqueKeyFields);
+        String updateConnectionSql =
+                Arrays.stream(fieldNames)
+                        .filter(
+                                col -> {
+                                    boolean bbool =
+                                            uniqueKeyList.contains(col.toLowerCase())
+                                                            || uniqueKeyList.contains(
+                                                                    col.toUpperCase())
+                                                    ? false
+                                                    : true;
+                                    return bbool;
+                                })
+                        .map(col -> buildConnectionByAllReplace(allReplace, col))
+                        .collect(Collectors.joining(","));
+        return updateConnectionSql;
+    }
+    /**
+     * build select sql , such as (SELECT ? "A",? "B" FROM DUAL)
+     *
+     * @param column destination column
+     * @return
+     */
+    public String buildDualQueryStatement(String[] column) {
+        StringBuilder sb = new StringBuilder("SELECT ");
+        String collect =
+                Arrays.stream(column)
+                        .map(col -> wrapperPlaceholder(col) + quoteIdentifier(col))
+                        .collect(Collectors.joining(", "));
+        sb.append(collect).append(" FROM DUAL");
+        return sb.toString();
+    }
+    /**
+     * char type is wrapped with rpad
+     *
+     * @param fieldName
+     * @return
+     */
+    public String wrapperPlaceholder(String fieldName) {
+
+        return SQL_DEFAULT_PLACEHOLDER + fieldName + " ";
+    }
+
+    private String buildConnectionByAllReplace(boolean allReplace, String col) {
+        String conncetionSql =
+                allReplace
+                        ? quoteIdentifier("T1")
+                                + "."
+                                + quoteIdentifier(col)
+                                + " = "
+                                + quoteIdentifier("T2")
+                                + "."
+                                + quoteIdentifier(col)
+                        : quoteIdentifier("T1")
+                                + "."
+                                + quoteIdentifier(col)
+                                + " =nvl("
+                                + quoteIdentifier("T2")
+                                + "."
+                                + quoteIdentifier(col)
+                                + ","
+                                + quoteIdentifier("T1")
+                                + "."
+                                + quoteIdentifier(col)
+                                + ")";
+        return conncetionSql;
+    }
+
+    private String buildConnectionConditions(String[] uniqueKeyFields) {
+        return Arrays.stream(uniqueKeyFields)
+                .map(
+                        col ->
+                                "T1."
+                                        + quoteIdentifier(col.trim())
+                                        + "=T2."
+                                        + quoteIdentifier(col.trim()))
+                .collect(Collectors.joining(" and "));
+    }
+
     @Override
     public String quoteIdentifier(String identifier) {
-        return identifier;
+        return "" + identifier + "";
     }
 
     @Override
@@ -55,22 +174,22 @@ public class OracleDialect extends AbstractDialect {
 
     @Override
     public int maxDecimalPrecision() {
-        return 65;
+        return MAX_DECIMAL_PRECISION;
     }
 
     @Override
     public int minDecimalPrecision() {
-        return 1;
+        return MIN_DECIMAL_PRECISION;
     }
 
     @Override
     public int maxTimestampPrecision() {
-        return 6;
+        return MAX_TIMESTAMP_PRECISION;
     }
 
     @Override
     public int minTimestampPrecision() {
-        return 1;
+        return MIN_TIMESTAMP_PRECISION;
     }
 
     @Override
