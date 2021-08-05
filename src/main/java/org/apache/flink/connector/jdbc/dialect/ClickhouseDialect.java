@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+/** JDBC dialect for Clickhouse. */
 public class ClickhouseDialect extends AbstractDialect {
     private static final long serialVersionUID = 1L;
     private static final int MAX_TIMESTAMP_PRECISION = 9;
